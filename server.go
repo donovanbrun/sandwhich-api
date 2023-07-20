@@ -12,5 +12,5 @@ func main() {
 
 	routes.Routes(app)
 
-	app.Listen(":1234")
+	app.Listen("0.0.0.0:1234")
 }

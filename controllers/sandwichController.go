@@ -3,8 +3,10 @@ package controllers
 import (
 	"context"
 	"github.com/gofiber/fiber/v2"
+	jtoken "github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 	"sandwhich/configs"
 	"sandwhich/models"
 	"time"
@@ -12,19 +14,27 @@ import (
 
 var sandwichCollection = configs.GetCollection(configs.DB, "sandwiches")
 
-func GetSandwiches(ctx *fiber.Ctx) error {
-	context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func GetSandwiches(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	cursor, err := sandwichCollection.Find(context, bson.M{})
+	user := c.Locals("user").(*jtoken.Token)
+	if user == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	limit := 100
+	cursor, err := sandwichCollection.Find(ctx, bson.M{}, options.Find().SetLimit(int64(limit)))
 	if err != nil {
 		return err
 	}
-	defer cursor.Close(context)
+	defer cursor.Close(ctx)
 
 	var sandwiches []models.Sandwich
 
-	for cursor.Next(context) {
+	for cursor.Next(ctx) {
 		var sandwich models.Sandwich
 		if err := cursor.Decode(&sandwich); err != nil {
 			return err
@@ -36,22 +46,122 @@ func GetSandwiches(ctx *fiber.Ctx) error {
 		return err
 	}
 
-	return ctx.JSON(sandwiches)
+	return c.JSON(sandwiches)
 }
 
-func GetSandwich(ctx *fiber.Ctx) error {
-	context, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func GetSandwich(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	idParam := ctx.Params("id")
+	idParam := c.Params("id")
 	id, err := primitive.ObjectIDFromHex(idParam)
-	filter := bson.M{"_id": id}
 
 	var sandwich models.Sandwich
-	err = sandwichCollection.FindOne(context, filter).Decode(&sandwich)
+	filter := bson.M{"_id": id}
+	err = sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
 	if err != nil {
 		return err
 	}
 
-	return ctx.JSON(sandwich)
+	return c.JSON(sandwich)
+}
+
+func GetSandwichesByUserID(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	idParam := c.Params("id")
+	id, err := primitive.ObjectIDFromHex(idParam)
+	cursor, err := sandwichCollection.Find(ctx, bson.M{"userId": id})
+
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(ctx)
+
+	var sandwiches []models.Sandwich
+
+	for cursor.Next(ctx) {
+		var sandwich models.Sandwich
+		if err := cursor.Decode(&sandwich); err != nil {
+			return err
+		}
+		sandwiches = append(sandwiches, sandwich)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return err
+	}
+
+	return c.JSON(sandwiches)
+}
+
+func CreateSandwich(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	sandwich := new(models.Sandwich)
+	if err := c.BodyParser(sandwich); err != nil {
+		return err
+	}
+
+	if sandwich.Name == "" || sandwich.UserId.IsZero() || sandwich.ImageUrl == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Missing required fields",
+		})
+	}
+
+	sandwich.Id = primitive.NewObjectID()
+	result, err := sandwichCollection.InsertOne(ctx, sandwich)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(result)
+}
+
+func UpdateSandwich(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	// get user from jwt
+	user := c.Locals("user").(*jtoken.Token)
+	if user == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+	userId := user.Claims.(jtoken.MapClaims)["id"]
+	userId, _ = primitive.ObjectIDFromHex(userId.(string))
+
+	sandwichUpdated := new(models.Sandwich)
+	if err := c.BodyParser(sandwichUpdated); err != nil {
+		return err
+	}
+
+	// get sandwich from mongo and check if user is owner
+	var sandwich models.Sandwich
+	filter := bson.M{"_id": sandwichUpdated.Id}
+	err := sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
+	if err != nil {
+		return err
+	}
+	if sandwich.UserId != userId {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Unauthorized",
+		})
+	}
+
+	if sandwichUpdated.Name == "" || sandwichUpdated.UserId.IsZero() || sandwichUpdated.ImageUrl == "" {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
+			"error": "Missing required fields",
+		})
+	}
+
+	res, err := sandwichCollection.UpdateOne(ctx, bson.M{"_id": sandwichUpdated.Id}, bson.M{"$set": sandwichUpdated})
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(res)
 }

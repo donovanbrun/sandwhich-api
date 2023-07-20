@@ -6,4 +6,5 @@ func Routes(app *fiber.App) {
 	api := app.Group("/api")
 	api.Route("/sandwich", SandwichRoutes)
 	api.Route("/user", UserRoutes)
+	api.Route("/layer", LayerRoute)
 }
