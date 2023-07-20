@@ -6,6 +6,7 @@ import (
 	jtoken "github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
+	"sandwhich/configs"
 	"sandwhich/models"
 	"time"
 )
@@ -21,7 +22,6 @@ func Login(c *fiber.Ctx) error {
 
 	// Find the user by credentials
 	user, err := GetByCredentials(loginRequest.Email, loginRequest.Password)
-	println(user.Password)
 	if err != nil {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": err.Error(),
@@ -38,7 +38,7 @@ func Login(c *fiber.Ctx) error {
 	// Create token
 	token := jtoken.NewWithClaims(jtoken.SigningMethodHS256, claims)
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte("secret")) // TODO: Change this to a more secure secret
+	t, err := token.SignedString([]byte(configs.GetEnv("secret")))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),

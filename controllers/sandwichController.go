@@ -3,7 +3,6 @@ package controllers
 import (
 	"context"
 	"github.com/gofiber/fiber/v2"
-	jtoken "github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -17,13 +16,6 @@ var sandwichCollection = configs.GetCollection(configs.DB, "sandwiches")
 func GetSandwiches(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-
-	user := c.Locals("user").(*jtoken.Token)
-	if user == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized",
-		})
-	}
 
 	limit := 100
 	cursor, err := sandwichCollection.Find(ctx, bson.M{}, options.Find().SetLimit(int64(limit)))
@@ -100,6 +92,8 @@ func CreateSandwich(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	user := c.Locals("user").(*models.User)
+
 	sandwich := new(models.Sandwich)
 	if err := c.BodyParser(sandwich); err != nil {
 		return err
@@ -108,6 +102,12 @@ func CreateSandwich(c *fiber.Ctx) error {
 	if sandwich.Name == "" || sandwich.UserId.IsZero() || sandwich.ImageUrl == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": "Missing required fields",
+		})
+	}
+
+	if sandwich.UserId != user.Id {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "UserId does not refer to the connected user",
 		})
 	}
 
@@ -124,15 +124,7 @@ func UpdateSandwich(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	// get user from jwt
-	user := c.Locals("user").(*jtoken.Token)
-	if user == nil {
-		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
-			"error": "Unauthorized",
-		})
-	}
-	userId := user.Claims.(jtoken.MapClaims)["id"]
-	userId, _ = primitive.ObjectIDFromHex(userId.(string))
+	user := c.Locals("user").(*models.User)
 
 	sandwichUpdated := new(models.Sandwich)
 	if err := c.BodyParser(sandwichUpdated); err != nil {
@@ -144,9 +136,11 @@ func UpdateSandwich(c *fiber.Ctx) error {
 	filter := bson.M{"_id": sandwichUpdated.Id}
 	err := sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
 	if err != nil {
-		return err
+		return c.Status(fiber.StatusNotFound).JSON(fiber.Map{
+			"error": "Sandwich not found",
+		})
 	}
-	if sandwich.UserId != userId {
+	if sandwich.UserId != user.Id {
 		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
 			"error": "Unauthorized",
 		})

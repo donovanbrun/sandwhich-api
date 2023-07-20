@@ -80,3 +80,42 @@ func ExistByEmail(email string) bool {
 	}
 	return true
 }
+
+func UpdateUser(c *fiber.Ctx) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	var userTDO models.User
+	err := c.BodyParser(&userTDO)
+	if err != nil {
+		return err
+	}
+
+	filter := bson.M{"_id": userTDO.Id}
+	update := bson.M{"$set": bson.M{
+		"name": userTDO.Name,
+		"bio":  userTDO.Bio,
+	}}
+
+	res, err := userCollection.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(res)
+}
+
+func GetUserById(id string) (*models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	oid, _ := primitive.ObjectIDFromHex(id)
+	var user models.User
+	filter := bson.M{"_id": oid}
+	err := userCollection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+
+	return &user, nil
+}
