@@ -10,6 +10,7 @@ import (
 func UserRoutes(router fiber.Router) {
 	jwt := middlewares.NewAuthMiddleware(configs.GetEnv("SECRET"))
 
+	router.Get("", jwt, middlewares.EnsureUser, controllers.GetConnectedUser)
 	router.Get("/find-admin/:id", jwt, middlewares.EnsureAdmin, controllers.GetUser)
 	router.Get("/find/:id", jwt, middlewares.EnsureUser, controllers.GetUserPublic)
 	router.Post("/login", controllers.Login)

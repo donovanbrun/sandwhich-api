@@ -12,6 +12,17 @@ import (
 
 var userCollection = configs.GetCollection(configs.DB, "users")
 
+func GetConnectedUser(c *fiber.Ctx) error {
+	user := c.Locals("user").(*models.User)
+	userPublic := models.UserPublic{
+		Id:    user.Id,
+		Email: user.Email,
+		Name:  user.Name,
+		Bio:   user.Bio,
+	}
+	return c.JSON(userPublic)
+}
+
 func GetUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
