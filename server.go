@@ -19,5 +19,10 @@ func main() {
 
 	routes.Routes(app)
 
-	app.Listen("0.0.0.0:1234")
+	port := configs.GetEnv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	app.Listen("0.0.0.0:" + port)
 }
