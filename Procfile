@@ -1,1 +1,1 @@
-web: build/sandwhich
+web: bin/sandwhich
