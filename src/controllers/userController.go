@@ -5,8 +5,8 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"sandwhich/configs"
-	"sandwhich/models"
+	"sandwhich/src/configs"
+	"sandwhich/src/models"
 	"time"
 )
 

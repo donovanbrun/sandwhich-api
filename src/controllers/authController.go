@@ -6,14 +6,14 @@ import (
 	jtoken "github.com/golang-jwt/jwt/v4"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"golang.org/x/crypto/bcrypt"
-	"sandwhich/configs"
-	"sandwhich/models"
+	"sandwhich/src/configs"
+	models2 "sandwhich/src/models"
 	"time"
 )
 
 func Login(c *fiber.Ctx) error {
 	// Extract the credentials from the request body
-	loginRequest := new(models.LoginRequest)
+	loginRequest := new(models2.LoginRequest)
 	if err := c.BodyParser(loginRequest); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),
@@ -38,14 +38,14 @@ func Login(c *fiber.Ctx) error {
 	// Create token
 	token := jtoken.NewWithClaims(jtoken.SigningMethodHS256, claims)
 	// Generate encoded token and send it as response.
-	t, err := token.SignedString([]byte(configs.GetEnv("secret")))
+	t, err := token.SignedString([]byte(configs.Env.SECRET))
 	if err != nil {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
 			"error": err.Error(),
 		})
 	}
 	// Return the token
-	return c.JSON(models.LoginResponse{
+	return c.JSON(models2.LoginResponse{
 		Token:      t,
 		Expiration: exp.Unix(),
 	})
@@ -55,7 +55,7 @@ func Signup(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user := new(models.User)
+	user := new(models2.User)
 	if err := c.BodyParser(user); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{
 			"error": err.Error(),

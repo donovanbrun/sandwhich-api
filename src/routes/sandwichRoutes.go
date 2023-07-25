@@ -2,13 +2,12 @@ package routes
 
 import (
 	"github.com/gofiber/fiber/v2"
-	"sandwhich/configs"
-	"sandwhich/controllers"
-	"sandwhich/middlewares"
+	"sandwhich/src/controllers"
+	"sandwhich/src/middlewares"
 )
 
 func SandwichRoutes(router fiber.Router) {
-	jwt := middlewares.NewAuthMiddleware(configs.GetEnv("SECRET"))
+	jwt := middlewares.NewAuthMiddleware()
 
 	router.Get("/", jwt, middlewares.EnsureUser, controllers.GetSandwiches)
 	router.Get("/:id", jwt, middlewares.EnsureUser, controllers.GetSandwich)

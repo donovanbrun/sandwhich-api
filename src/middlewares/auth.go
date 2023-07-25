@@ -4,13 +4,14 @@ import (
 	"github.com/gofiber/fiber/v2"
 	jwtware "github.com/gofiber/jwt/v3"
 	jtoken "github.com/golang-jwt/jwt/v4"
-	"sandwhich/controllers"
+	"sandwhich/src/configs"
+	"sandwhich/src/controllers"
 )
 
 // Middleware JWT function
-func NewAuthMiddleware(secret string) fiber.Handler {
+func NewAuthMiddleware() fiber.Handler {
 	return jwtware.New(jwtware.Config{
-		SigningKey: []byte(secret),
+		SigningKey: []byte(configs.Env.SECRET),
 		ContextKey: "token",
 	})
 }

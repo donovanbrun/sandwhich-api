@@ -10,7 +10,7 @@ import (
 )
 
 func ConnectDB() *mongo.Client {
-	client, err := mongo.NewClient(options.Client().ApplyURI(GetEnv("MONGO_URL")))
+	client, err := mongo.NewClient(options.Client().ApplyURI(Env.MONGO_URL))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -35,6 +35,6 @@ var DB *mongo.Client = ConnectDB()
 
 // getting database collections
 func GetCollection(client *mongo.Client, collectionName string) *mongo.Collection {
-	collection := client.Database(GetEnv("DATABASE")).Collection(collectionName)
+	collection := client.Database(Env.DATABASE).Collection(collectionName)
 	return collection
 }

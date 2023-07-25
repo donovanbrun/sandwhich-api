@@ -6,8 +6,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"sandwhich/configs"
-	"sandwhich/models"
+	"sandwhich/src/configs"
+	models2 "sandwhich/src/models"
 	"time"
 )
 
@@ -24,10 +24,10 @@ func GetSandwiches(c *fiber.Ctx) error {
 	}
 	defer cursor.Close(ctx)
 
-	var sandwiches []models.Sandwich
+	var sandwiches []models2.Sandwich
 
 	for cursor.Next(ctx) {
-		var sandwich models.Sandwich
+		var sandwich models2.Sandwich
 		if err := cursor.Decode(&sandwich); err != nil {
 			return err
 		}
@@ -48,7 +48,7 @@ func GetSandwich(c *fiber.Ctx) error {
 	idParam := c.Params("id")
 	id, err := primitive.ObjectIDFromHex(idParam)
 
-	var sandwich models.Sandwich
+	var sandwich models2.Sandwich
 	filter := bson.M{"_id": id}
 	err = sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
 	if err != nil {
@@ -71,10 +71,10 @@ func GetSandwichesByUserID(c *fiber.Ctx) error {
 	}
 	defer cursor.Close(ctx)
 
-	var sandwiches []models.Sandwich
+	var sandwiches []models2.Sandwich
 
 	for cursor.Next(ctx) {
-		var sandwich models.Sandwich
+		var sandwich models2.Sandwich
 		if err := cursor.Decode(&sandwich); err != nil {
 			return err
 		}
@@ -92,9 +92,9 @@ func CreateSandwich(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user := c.Locals("user").(*models.User)
+	user := c.Locals("user").(*models2.User)
 
-	sandwich := new(models.Sandwich)
+	sandwich := new(models2.Sandwich)
 	if err := c.BodyParser(sandwich); err != nil {
 		return err
 	}
@@ -124,15 +124,15 @@ func UpdateSandwich(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	user := c.Locals("user").(*models.User)
+	user := c.Locals("user").(*models2.User)
 
-	sandwichUpdated := new(models.Sandwich)
+	sandwichUpdated := new(models2.Sandwich)
 	if err := c.BodyParser(sandwichUpdated); err != nil {
 		return err
 	}
 
 	// get sandwich from mongo and check if user is owner
-	var sandwich models.Sandwich
+	var sandwich models2.Sandwich
 	filter := bson.M{"_id": sandwichUpdated.Id}
 	err := sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
 	if err != nil {
