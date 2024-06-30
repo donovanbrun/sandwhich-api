@@ -8,11 +8,12 @@ import (
 
 func UserRoutes(router fiber.Router) {
 	jwt := middlewares.NewAuthMiddleware()
+	filter := middlewares.AuthorizedSource()
 
-	router.Get("", jwt, middlewares.EnsureUser, controllers2.GetConnectedUser)
-	router.Get("/find-admin/:id", jwt, middlewares.EnsureAdmin, controllers2.GetUser)
-	router.Get("/find/:id", jwt, middlewares.EnsureUser, controllers2.GetUserPublic)
-	router.Post("/login", controllers2.Login)
-	router.Post("/signup", controllers2.Signup)
-	router.Post("/update", jwt, middlewares.EnsureUser, controllers2.UpdateUser)
+	router.Get("", filter, jwt, middlewares.EnsureUser, controllers2.GetConnectedUser)
+	router.Get("/find-admin/:id", filter, jwt, middlewares.EnsureAdmin, controllers2.GetUser)
+	router.Get("/find/:id", controllers2.GetUserPublic)
+	router.Post("/login", filter, controllers2.Login)
+	router.Post("/signup", filter, controllers2.Signup)
+	router.Put("/update", filter, jwt, middlewares.EnsureUser, controllers2.UpdateUser)
 }

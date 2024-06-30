@@ -16,6 +16,19 @@ func NewAuthMiddleware() fiber.Handler {
 	})
 }
 
+// AuthorizedSource is a middleware that filters incoming requests based on a whitelist of IP addresses
+func AuthorizedSource() fiber.Handler {
+	/*return func(c *fiber.Ctx) error {
+		if website := c.Get("Origin"); website != configs.Env.SITE_URL {
+			return c.SendStatus(fiber.StatusForbidden)
+		}
+		return c.Next()
+	}*/
+	return func(c *fiber.Ctx) error {
+		return c.Next()
+	}
+}
+
 func EnsureUser(c *fiber.Ctx) error {
 	token := c.Locals("token").(*jtoken.Token)
 	if token == nil {

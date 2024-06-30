@@ -152,10 +152,20 @@ func UpdateSandwich(c *fiber.Ctx) error {
 		})
 	}
 
-	res, err := sandwichCollection.UpdateOne(ctx, bson.M{"_id": sandwichUpdated.Id}, bson.M{"$set": sandwichUpdated})
+	sandwich.Name = sandwichUpdated.Name
+	sandwich.ImageUrl = sandwichUpdated.ImageUrl
+	sandwich.Description = sandwichUpdated.Description
+
+	_, err = sandwichCollection.UpdateOne(ctx, bson.M{"_id": sandwich.Id}, bson.M{"$set": sandwich})
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(res)
+	filter = bson.M{"_id": sandwich.Id}
+	err = sandwichCollection.FindOne(ctx, filter).Decode(&sandwich)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(sandwich)
 }

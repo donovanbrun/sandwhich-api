@@ -9,8 +9,8 @@ import (
 func SandwichRoutes(router fiber.Router) {
 	jwt := middlewares.NewAuthMiddleware()
 
-	router.Get("/", jwt, middlewares.EnsureUser, controllers.GetSandwiches)
-	router.Get("/:id", jwt, middlewares.EnsureUser, controllers.GetSandwich)
+	router.Get("/", controllers.GetSandwiches)
+	router.Get("/:id", controllers.GetSandwich)
 	router.Get("/user/:id", jwt, middlewares.EnsureUser, controllers.GetSandwichesByUserID)
 	router.Post("/create", jwt, middlewares.EnsureUser, controllers.CreateSandwich)
 	router.Put("/update", jwt, middlewares.EnsureUser, controllers.UpdateSandwich)

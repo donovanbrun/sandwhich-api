@@ -15,10 +15,9 @@ var userCollection = configs.GetCollection(configs.DB, "users")
 func GetConnectedUser(c *fiber.Ctx) error {
 	user := c.Locals("user").(*models.User)
 	userPublic := models.UserPublic{
-		Id:    user.Id,
-		Email: user.Email,
-		Name:  user.Name,
-		Bio:   user.Bio,
+		Id:   user.Id,
+		Name: user.Name,
+		Bio:  user.Bio,
 	}
 	return c.JSON(userPublic)
 }
@@ -96,24 +95,33 @@ func UpdateUser(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
+	var connectedUser = c.Locals("user").(*models.User)
+
 	var userTDO models.User
 	err := c.BodyParser(&userTDO)
 	if err != nil {
 		return err
 	}
 
-	filter := bson.M{"_id": userTDO.Id}
+	filter := bson.M{"_id": connectedUser.Id}
 	update := bson.M{"$set": bson.M{
-		"name": userTDO.Name,
-		"bio":  userTDO.Bio,
+		//"name": userTDO.Name,
+		"bio": userTDO.Bio,
 	}}
 
-	res, err := userCollection.UpdateOne(ctx, filter, update)
+	_, err = userCollection.UpdateOne(ctx, filter, update)
 	if err != nil {
 		return err
 	}
 
-	return c.JSON(res)
+	var user models.UserPublic
+	filter = bson.M{"_id": connectedUser.Id}
+	err = userCollection.FindOne(ctx, filter).Decode(&user)
+	if err != nil {
+		return err
+	}
+
+	return c.JSON(user)
 }
 
 func GetUserById(id string) (*models.User, error) {

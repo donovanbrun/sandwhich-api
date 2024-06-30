@@ -12,8 +12,7 @@ type User struct {
 }
 
 type UserPublic struct {
-	Id    primitive.ObjectID `json:"id" bson:"_id"`
-	Name  string             `json:"name" bson:"name"`
-	Email string             `json:"email" bson:"email"`
-	Bio   string             `json:"bio" bson:"bio"`
+	Id   primitive.ObjectID `json:"id" bson:"_id"`
+	Name string             `json:"name" bson:"name"`
+	Bio  string             `json:"bio" bson:"bio"`
 }

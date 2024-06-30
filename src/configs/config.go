@@ -11,6 +11,7 @@ type EnvVar struct {
 	SECRET    string
 	MONGO_URL string
 	DATABASE  string
+	SITE_URL  string
 }
 
 var Env = EnvVar{
@@ -18,6 +19,7 @@ var Env = EnvVar{
 	SECRET:    GetEnv("SECRET"),
 	MONGO_URL: GetEnv("MONGO_URL"),
 	DATABASE:  GetEnv("DATABASE"),
+	SITE_URL:  GetEnv("SITE_URL"),
 }
 
 func GetEnv(key string) string {

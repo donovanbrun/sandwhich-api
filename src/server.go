@@ -26,5 +26,9 @@ func main() {
 		port = "8080"
 	}
 
+	app.Get("/", func(c *fiber.Ctx) error {
+		return c.SendString("UP")
+	})
+
 	app.Listen("0.0.0.0:" + port)
 }

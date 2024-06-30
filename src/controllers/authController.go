@@ -27,6 +27,13 @@ func Login(c *fiber.Ctx) error {
 			"error": err.Error(),
 		})
 	}
+
+	if user == nil {
+		return c.Status(fiber.StatusUnauthorized).JSON(fiber.Map{
+			"error": "Invalid credentials",
+		})
+	}
+
 	day := time.Hour * 24
 	exp := time.Now().Add(day * 1)
 	// Create the JWT claims, which includes the user ID and expiry time
