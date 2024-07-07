@@ -17,8 +17,9 @@ func GetSandwiches(c *fiber.Ctx) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	limit := 100
-	cursor, err := sandwichCollection.Find(ctx, bson.M{}, options.Find().SetLimit(int64(limit)))
+	page := c.QueryInt("page", 1)
+	limit := 20
+	cursor, err := sandwichCollection.Find(ctx, bson.M{}, options.Find().SetLimit(int64(limit)).SetSkip(int64(limit*(page-1))))
 	if err != nil {
 		return err
 	}
@@ -38,7 +39,19 @@ func GetSandwiches(c *fiber.Ctx) error {
 		return err
 	}
 
-	return c.JSON(sandwiches)
+	type Res struct {
+		Data    []models2.Sandwich `json:"data" bson:"data"`
+		Page    int                `json:"page" bson:"page"`
+		HasMore bool               `json:"hasMore" bson:"hasMore"`
+	}
+
+	res := Res{
+		Data:    sandwiches,
+		Page:    page,
+		HasMore: len(sandwiches) == limit,
+	}
+
+	return c.JSON(res)
 }
 
 func GetSandwich(c *fiber.Ctx) error {
